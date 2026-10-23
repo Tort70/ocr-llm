@@ -1,0 +1,211 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ocr-llm.local/schema/job.v1.json",
+  "title": "OCR-LLM Job Contract",
+  "description": "Filesystem-based job contract for OCR to LLM processing pipeline (v1.0)",
+  "type": "object",
+  "required": ["contract_version", "job", "creator", "input", "task", "constraints", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "contract_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Contract schema version. Future versions must remain backward-compatible with v1.0 readers."
+    },
+    "job": {
+      "type": "object",
+      "description": "Core job metadata",
+      "required": ["id", "created_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^job-[0-9]{8}-[0-9]{3}$",
+          "description": "Human-readable job ID: job-YYYYMMDD-NNN (e.g., job-20260208-001). IMMUTABLE after creation."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp when job was submitted. IMMUTABLE."
+        },
+        "started_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO8601 timestamp when processing began. Set by worker."
+        },
+        "completed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "ISO8601 timestamp when processing finished. Set by worker."
+        }
+      }
+    },
+    "creator": {
+      "type": "object",
+      "description": "Origin context for audit trail",
+      "required": ["system", "user_id", "role"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "Originating system identifier (e.g., 'canvas-lms', 'exam-portal')"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "Opaque user identifier from originating system. For audit only."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "instructor", "admin", "system"],
+          "description": "User role at time of submission. Affects constraint enforcement."
+        },
+        "session_id": {
+          "type": ["string", "null"],
+          "description": "Optional session identifier for correlation"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "description": "Input file metadata. Actual file stored in input/ directory.",
+      "required": ["filename", "type", "checksum", "size_bytes"],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "Original filename as submitted"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["pdf", "png", "jpg", "jpeg", "tiff", "webp"],
+          "description": "Input file type (determines OCR preprocessing)"
+        },
+        "checksum": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "SHA256 checksum prefixed with algorithm. IMMUTABLE. Used for integrity verification."
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "File size in bytes"
+        },
+        "page_count": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Number of pages (for multi-page documents)"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "description": "Processing task definition",
+      "required": ["ocr", "llm"],
+      "properties": {
+        "ocr": {
+          "type": "object",
+          "required": ["engine"],
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": ["tesseract", "easyocr", "paddleocr", "none"],
+              "description": "'none' skips OCR (for text-based PDFs)"
+            },
+            "language": {
+              "type": "string",
+              "default": "eng",
+              "description": "OCR language code (ISO 639-3)"
+            },
+            "dpi": {
+              "type": "integer",
+              "default": 300,
+              "minimum": 72,
+              "maximum": 600,
+              "description": "Resolution for PDF rendering"
+            }
+          }
+        },
+        "llm": {
+          "type": "object",
+          "required": ["provider", "model"],
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["ollama"],
+              "description": "LLM provider (local inference only)"
+            },
+            "model": {
+              "type": "string",
+              "description": "Model identifier (e.g., 'mistral', 'llama2')"
+            },
+            "temperature": {
+              "type": "number",
+              "default": 0.0,
+              "minimum": 0.0,
+              "maximum": 2.0,
+              "description": "Sampling temperature. 0.0 recommended for grading consistency."
+            },
+            "max_tokens": {
+              "type": "integer",
+              "default": 4096,
+              "minimum": 1,
+              "maximum": 32768,
+              "description": "Maximum output tokens"
+            }
+          }
+        },
+        "prompt_template": {
+          "type": ["string", "null"],
+          "description": "Reference to prompt template file (e.g., 'grading/essay-v2')"
+        },
+        "prompt_variables": {
+          "type": "object",
+          "description": "Variables to substitute into prompt template",
+          "additionalProperties": true
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Safety and exam integrity constraints",
+      "required": ["exam_mode"],
+      "properties": {
+        "exam_mode": {
+          "type": "boolean",
+          "description": "If true, enforces strict isolation: no network for LLM context, no caching, full audit logging"
+        },
+        "allow_network_context": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether LLM may use web search or retrieval. Always false in exam_mode."
+        },
+        "time_limit_seconds": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Max processing time. Job fails if exceeded."
+        },
+        "content_filter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Apply content safety filtering to output"
+        },
+        "pii_redaction": {
+          "type": "boolean",
+          "default": false,
+          "description": "Redact detected PII from output"
+        },
+        "rubric_id": {
+          "type": ["string", "null"],
+          "description": "Reference to grading rubric for consistency enforcement"
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "processing", "completed", "failed", "cancelled"],
+      "description": "INFORMATIONAL ONLY. status.txt is the authoritative execution state. This field must not be used for control flow decisions."
+    },
+    "_extensions": {
+      "type": "object",
+      "description": "Reserved namespace for future extensions. v1.0 readers must ignore unknown keys here.",
+      "additionalProperties": true
+    }
+  }
+}

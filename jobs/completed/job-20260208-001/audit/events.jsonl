@@ -1,0 +1,9 @@
+{"event": "worker_claimed", "timestamp": "2026-02-08T18:58:16Z", "pid": 1735180}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "job_started", "details": {"location": "/srv/ocr-llm/jobs/running/job-20260208-001"}}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "stage_started", "details": {"stage": "ocr"}}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "stage_completed", "details": {"stage": "ocr"}}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "stage_started", "details": {"stage": "normalize"}}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "stage_completed", "details": {"stage": "normalize"}}
+{"timestamp": "2026-02-08T18:58:16Z", "event": "stage_started", "details": {"stage": "llm"}}
+{"timestamp": "2026-02-08T18:59:05Z", "event": "stage_completed", "details": {"stage": "llm"}}
+{"timestamp": "2026-02-08T18:59:05Z", "event": "job_completed"}

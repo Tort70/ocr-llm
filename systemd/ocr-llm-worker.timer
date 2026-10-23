@@ -1,0 +1,19 @@
+[Unit]
+Description=OCR-LLM Worker Timer (runs every minute)
+Documentation=file:///srv/ocr-llm/docs/JOB_CONTRACT.md
+
+[Timer]
+# Run once per minute
+OnCalendar=*:*
+
+# Catch up on missed runs after reboot or sleep
+Persistent=true
+
+# Randomize start within 5 seconds to reduce load spikes
+RandomizedDelaySec=5
+
+# Start immediately on timer enable (don't wait for first calendar tick)
+OnActiveSec=0
+
+[Install]
+WantedBy=timers.target

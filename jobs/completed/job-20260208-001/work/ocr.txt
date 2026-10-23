@@ -1,0 +1,8 @@
+[OCR STUB OUTPUT]
+Input file: midterm-essay-student-1042.pdf
+Engine: tesseract
+Language: eng
+DPI: 300
+
+This is placeholder OCR output.
+In production, this would contain the actual extracted text.

@@ -1,0 +1,51 @@
+{
+  "contract_version": "1.0",
+  "job": {
+    "id": "job-20260208-001",
+    "created_at": "2026-02-08T14:30:00Z",
+    "started_at": "2026-02-08T18:58:16Z",
+    "completed_at": "2026-02-08T18:59:05Z"
+  },
+  "creator": {
+    "system": "exam-portal",
+    "user_id": "instructor-4521",
+    "role": "instructor",
+    "session_id": "sess-8a3b2c1d"
+  },
+  "input": {
+    "filename": "midterm-essay-student-1042.pdf",
+    "type": "pdf",
+    "checksum": "sha256:3a7bd3e2360a8bb2c6f8e5d4c1b9f0a8e7d6c5b4a3928170f6e5d4c3b2a19087",
+    "size_bytes": 245780,
+    "page_count": 3
+  },
+  "task": {
+    "ocr": {
+      "engine": "tesseract",
+      "language": "eng",
+      "dpi": 300
+    },
+    "llm": {
+      "provider": "ollama",
+      "model": "mistral",
+      "temperature": 0.0,
+      "max_tokens": 4096
+    },
+    "prompt_template": "grading/essay-rubric-v1",
+    "prompt_variables": {
+      "course_id": "CS101",
+      "assignment": "midterm-essay",
+      "max_points": 100
+    }
+  },
+  "constraints": {
+    "exam_mode": true,
+    "allow_network_context": false,
+    "time_limit_seconds": 300,
+    "content_filter": true,
+    "pii_redaction": true,
+    "rubric_id": "rubric-cs101-essay-2026"
+  },
+  "status": "pending",
+  "_extensions": {}
+}

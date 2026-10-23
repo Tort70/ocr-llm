@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upload Exam Template</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #1a1a1a;
+      background: #fafafa;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 0.85rem; margin-bottom: 24px; }
+    form { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 24px; }
+    label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+    input[type="file"] {
+      display: block; width: 100%; padding: 8px;
+      border: 1px solid #ccc; border-radius: 4px;
+      font-size: 0.9rem; background: #fafafa;
+    }
+    .form-group { margin-bottom: 16px; }
+    .hint { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+    /* ----- OCR-LLM pilot checkbox — small, unobtrusive ---- */
+    .pilot-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px 10px;
+      background: #f4f6f9;
+      border: 1px solid #e0e4ea;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .pilot-toggle input[type="checkbox"] { margin: 0; }
+
+    button[type="submit"] {
+      background: #2563eb; color: #fff; border: none;
+      padding: 10px 20px; border-radius: 4px; font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover { background: #1d4ed8; }
+    button[type="submit"]:disabled { background: #93b4f5; cursor: not-allowed; }
+
+    .msg { margin-top: 16px; padding: 12px; border-radius: 4px; font-size: 0.9rem; }
+    .msg--ok  { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+    .msg--err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <h1>Upload Exam Template</h1>
+  <p class="subtitle">Select a document to upload for processing.</p>
+
+  <form id="upload-form" enctype="multipart/form-data">
+    <!-- ── Exam File field ──────────────────────────────── -->
+    <div class="form-group">
+      <label for="file">Exam File</label>
+      <input type="file" id="file" name="file"
+             accept=".pdf,.png,.jpg,.jpeg,.tiff,.webp" required>
+      <p class="hint">Accepted formats: PDF, PNG, JPG, TIFF, WebP (max 10 MB)</p>
+    </div>
+
+    <!-- Hidden auth context — in production, set by session middleware -->
+    <input type="hidden" name="user_id"    value="{{ user_id }}">
+    <input type="hidden" name="user_role"  value="{{ user_role }}">
+    {% if session_id %}
+    <input type="hidden" name="session_id" value="{{ session_id }}">
+    {% endif %}
+
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    // Minimal form handler: POST via fetch, display the response message.
+    // No polling, no status tracking, no async follow-up — just fire and show.
+    document.getElementById("upload-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var btn = this.querySelector("button[type=submit]");
+      var out = document.getElementById("result");
+      btn.disabled = true;
+      btn.textContent = "Uploading\u2026";
+      out.innerHTML = "";
+
+      fetch("/api/upload", { method: "POST", body: new FormData(this) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          var cls = res.ok ? "msg msg--ok" : "msg msg--err";
+          var text = res.data.message || res.data.error || JSON.stringify(res.data);
+          if (res.data.job_id) text += " (Job ID: " + res.data.job_id + ")";
+          out.innerHTML = "<div class='" + cls + "'>" + text + "</div>";
+        })
+        .catch(function () {
+          out.innerHTML = "<div class='msg msg--err'>Upload failed. Please try again.</div>";
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = "Upload";
+        });
+    });
+  </script>
+</body>
+</html>

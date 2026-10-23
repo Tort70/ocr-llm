@@ -1,0 +1,9 @@
+{
+  "model": "mistral",
+  "prompt": "You are grading a student submission.\n\nAssignment: midterm-essay\nCourse: CS101\nMax Points: 100\n\nStudent submission (OCR extracted):\n---\n[OCR STUB OUTPUT]\nInput file: midterm-essay-student-1042.pdf\nEngine: tesseract\nLanguage: eng\nDPI: 300\n\nThis is placeholder OCR output.\nIn production, this would contain the actual extracted text.\n---\n\nProvide a score and brief feedback.\n",
+  "options": {
+    "temperature": 0.0,
+    "num_predict": 4096
+  },
+  "stream": false
+}

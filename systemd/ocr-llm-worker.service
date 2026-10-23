@@ -1,0 +1,44 @@
+[Unit]
+Description=OCR-LLM Worker (oneshot)
+Documentation=file:///srv/ocr-llm/docs/JOB_CONTRACT.md
+
+[Service]
+Type=oneshot
+
+# Run as dedicated service user
+User=ocrllm
+Group=ocrllm
+
+# Working directory for relative paths
+WorkingDirectory=/srv/ocr-llm
+
+# Execute the worker script directly
+ExecStart=/usr/bin/python3 /srv/ocr-llm/worker.py
+
+# All exit codes are non-fatal:
+#   0 = success or no work
+#   1 = job failed (details in audit/error.txt)
+#   2 = another worker already active
+SuccessExitStatus=0 1 2
+
+# Logging to journal (stdout and stderr)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ocr-llm-worker
+
+# No automatic restart - timer handles scheduling
+Restart=no
+
+# Hardening: no network access required
+PrivateNetwork=true
+
+# Hardening: protect system directories
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/ocr-llm/jobs
+
+# Timeout: allow up to 10 minutes for LLM inference
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
